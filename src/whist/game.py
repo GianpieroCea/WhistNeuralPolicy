@@ -4,6 +4,7 @@ from enum import StrEnum,Enum
 from dataclasses import dataclass
 from typing import List,TypeAlias,Optional,cast,Set
 from random import shuffle
+from copy import deepcopy
 
 
 class Suit(Enum):
@@ -38,7 +39,7 @@ class Suit(Enum):
             case 'S' | '♠':
                 return Suit.SPADES
             case _:
-                raise ValueError(f'Cannot parsea a valid suit from string: {suit} ')
+                raise ValueError(f'The string: {suit} does not represent a valid card suit')
 
 
 class Value(Enum):
@@ -87,6 +88,24 @@ class Value(Enum):
             case _:
                 raise ValueError('Unrecongised suit')
 
+    @staticmethod
+    def from_str(value : str) -> 'Value':
+        if value.isdigit():
+            return Value(int(value))
+        else:
+            match value:
+                case 'J':
+                    return Value.JACK
+                case 'Q':
+                    return Value.QUEEN
+                case 'K':
+                    return Value.KING
+                case 'A':
+                    return Value.ACE
+                case _:
+                    raise ValueError("The str: {str} does not represent a valid card value")
+                
+
     def __lt__(self, other : 'Value') -> bool:
         return self.value < other.value
 
@@ -102,6 +121,10 @@ class Card:
 
     def __repr__(self) -> str:
         return self.suit.__repr__()+self.value.__repr__()
+    
+    @staticmethod
+    def from_str(card :str) -> 'Card':
+        return Card(suit=Suit.from_str(card[:1]), value=Value.from_str(card[1:]))
 
 
 @dataclass
@@ -127,6 +150,7 @@ class WhistGame:
         self.trump_suit : Optional[type['Suit']] = trump_suit
         self.current_trick : Optional[Trick] = None
         self.deck : List[Card] = DECK
+        self.is_finished : bool = False
 
     
 
@@ -134,10 +158,11 @@ class WhistGame:
     def current_hand(self) -> Deal:
         return self.player_hands[self.current_player]
     
-    def deal(self) -> None:
+    def deal(self, size : int = 13) -> None:
+        assert size <= 26
         shuffle(self.deck)
-        self.player_hands[0] = set(self.deck[:13])
-        self.player_hands[1] = set(self.deck[13:26])
+        self.player_hands[0] = set(self.deck[:size])
+        self.player_hands[1] = set(self.deck[size:2*size])
 
     @staticmethod
     def legal_moves(hand : Deal, lead_suit : Optional[Suit]) -> Deal:
@@ -191,37 +216,45 @@ class WhistGame:
 
 
 
-    
-    def apply_move(self , card: Card) -> None:
+    @staticmethod
+    def apply_move(state : 'WhistGame' , card: Card) -> 'WhistGame':
         """_summary_
 
         Args:
             card (Card): The card played by current player
 
         """
-        if self.current_trick is None:
-            self.current_trick = Trick(None,None)
+        new_state = deepcopy(state)
+        if new_state.current_trick is None:
+            new_state.current_trick = Trick(None,None)
 
-        self.player_hands[self.current_player].remove(card)
+        new_state.player_hands[new_state.current_player].remove(card)
 
-        if self.current_trick.lead_card is None:
-            self.current_trick.lead_card = card
-            self.current_player = 1 - self.current_player
+        if new_state.current_trick.lead_card is None:
+            new_state.current_trick.lead_card = card
+            new_state.current_player = 1 - new_state.current_player
         else:
             # current plyer is the follow
-            self.current_trick.follow_card = card
+            new_state.current_trick.follow_card = card
 
-            trick_winner : str = self.determine_winner(self.current_trick,self.trump_suit)
+            trick_winner : str = new_state.determine_winner(new_state.current_trick,new_state.trump_suit)
 
             if trick_winner == 'lead':
                 # lost
-                winner = 1 - self.current_player
+                winner = 1 - new_state.current_player
             else:
                 #won
-                winner = self.current_player
-            self.current_player = winner # the turn passes to whoever won the trick
-            self.trick_history.append((self.current_trick.lead_card, self.current_trick.follow_card,winner))
-            self.current_trick = None
+                winner = new_state.current_player
+            new_state.current_player = winner # the turn passes to whoever won the trick
+            new_state.trick_history.append((new_state.current_trick.lead_card, new_state.current_trick.follow_card,winner))
+            new_state.current_trick = None
+
+            # check game is finished
+            if len(new_state.player_hands[0]) == 0 and len(new_state.player_hands[1]) == 0:
+                new_state.is_finished = True
+        return new_state
+
+            
 
 
 
