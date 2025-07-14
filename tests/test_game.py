@@ -1,10 +1,5 @@
 from src.whist.game import WhistGame,Value,Suit,Card,Trick
-import pytest
 
-@pytest.fixture
-def whist():
-    whist = WhistGame()
-    return whist
 
 def test_deal(whist : WhistGame) -> None:
     print(whist.player_hands)

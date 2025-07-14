@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from typing import List,TypeAlias,Optional,cast,Set
 from random import shuffle
 from copy import deepcopy
+import numpy
 
 
 class Suit(Enum):
@@ -143,11 +144,11 @@ Player: TypeAlias = int  # 0 or 1
 
 
 class WhistGame:
-    def __init__(self, player_hands : List[Deal] = [set(),set()], trick_history : List[tuple[Card,Card,Player]] = [], current_player : Player = 0, deck : Deal = DECK, trump_suit : Optional[type['Suit']] = None):
+    def __init__(self, player_hands : List[Deal] = [set(),set()], trick_history : List[tuple[Card,Card,Player]] = [], current_player : Player = 0, deck : List[Card] = DECK, trump_suit : Optional[Suit] = None):
         self.player_hands : List[Deal] = player_hands
         self.trick_history: List[tuple[Card,Card,Player]] = trick_history  #(lead,follow,winner)
         self.current_player: Player = current_player
-        self.trump_suit : Optional[type['Suit']] = trump_suit
+        self.trump_suit : Optional[Suit] = trump_suit
         self.current_trick : Optional[Trick] = None
         self.deck : List[Card] = DECK
         self.is_finished : bool = False
