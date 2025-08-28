@@ -3,7 +3,6 @@
 from src.whist.game import WhistGame,Card
 import numpy as np
 from typing import Optional,List
-from logging import Logger
 
 def heuristic(game_state : WhistGame) -> int:
     print('heuristic called') 
@@ -12,9 +11,7 @@ def heuristic(game_state : WhistGame) -> int:
     print(f"wins: {player_zero_wins}, {player_one_wins}")
     return player_zero_wins - player_one_wins
 
-
-
-def minmax(game_state : WhistGame, depth :int, alpha : int, beta: int, target_player : int) -> tuple[int,Optional[Card]]:
+def minmax_multi(game_state : WhistGame, depth :int, alpha : int, beta: int, target_player : int) -> tuple[int,Optional[Card]]:
     """Implements minmax with alpha-beta pruning
 
     Args:
@@ -28,9 +25,6 @@ def minmax(game_state : WhistGame, depth :int, alpha : int, beta: int, target_pl
         tuple[int,Optional[Card]]: A pair, the value of the state and the best card to play from this state.None if 
         game is finished.
     """
-    
-
-
     if depth == 0 or game_state.is_finished:
         print('heurstic called, depth:',depth,' and game state finished:',game_state.is_finished)
         return heuristic(game_state), None
@@ -46,42 +40,38 @@ def minmax(game_state : WhistGame, depth :int, alpha : int, beta: int, target_pl
     maximizingPlayer = (game_state.current_player == target_player)
     if maximizingPlayer:
         best_value : int = -np.inf
-
-        lead_suit = game_state.current_trick.lead_card.suit if game_state.current_trick else None
-        legal_moves = WhistGame.legal_moves(game_state.current_hand,lead_suit)
+        best_cards : List[Card] = []
         
-        for next_move in legal_moves:
-
+        for next_move in WhistGame.legal_moves(game_state.current_hand, game_state.current_trick.lead_card.suit if game_state.current_trick else None):
             next_state = WhistGame.apply_move(game_state, next_move)
-            print(id(game_state), id(next_state))
-            current_value,_ = minmax(next_state, depth-1, alpha, beta, target_player )
-            print(f"{current_value}-{best_value}")
+            current_value, _ = minmax_multi(next_state, depth-1, alpha, beta, target_player )
+
             if current_value > best_value:
                 best_value = current_value
-                best_move = next_move
-         
+                best_cards = [next_move]
+            elif current_value == best_value:
+                best_cards.append(next_move)
 
             if best_value >= beta:
                 break
             alpha = max(alpha, best_value)
-        return best_value,best_move
+        return best_value, best_cards
     else:
         best_value : int = np.inf
-        lead_suit = game_state.current_trick.lead_card.suit if game_state.current_trick else None
-        legal_moves = WhistGame.legal_moves(game_state.current_hand,lead_suit)
+        best_cards : List[Card] = []
 
-
-        for next_move in legal_moves:
+        for next_move in WhistGame.legal_moves(game_state.current_hand, game_state.current_trick.lead_card.suit if game_state.current_trick else None):
             next_state = WhistGame.apply_move(game_state, next_move)
-            current_value,_ = minmax(next_state, depth-1, alpha, beta, target_player)
+            current_value, _ = minmax_multi(next_state, depth-1, alpha, beta, target_player)
 
             if current_value < best_value:
                 best_value = current_value
-                best_move = next_move
- 
+                best_cards = [next_move]
+            elif current_value == best_value:
+                best_cards.append(next_move)
 
             if best_value <= alpha:
                 break
             beta = min(beta, best_value)
-        return best_value, best_move
+        return best_value, best_cards
         

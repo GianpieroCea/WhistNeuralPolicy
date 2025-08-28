@@ -5,6 +5,7 @@ name = "pypi"
 
 [packages]
 numpy = "*"
+torch = "*"
 
 [dev-packages]
 black = "*"
@@ -13,6 +14,7 @@ isort = "*"
 mypy = "*"
 pre-commit = "*"
 pytest = "*"
+ipykernel = "*"
 
 [requires]
 python_version = "3.11"

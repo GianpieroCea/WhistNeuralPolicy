@@ -9,8 +9,9 @@ def test_deal(whist : WhistGame) -> None:
     len(whist.deck) == 52
     len(whist.player_hands[0]) == 13
     len(whist.player_hands[1]) == 13
+    isinstance(whist.player_hands[0],list)
     print(type(whist.player_hands[0]))
-    len((whist.player_hands[0]).difference(whist.player_hands[1])) == 0
+    len(set(whist.player_hands[0]).difference(set(whist.player_hands[1]))) == 0
 
 
 def test_legal_moves() -> None:
@@ -21,7 +22,7 @@ def test_legal_moves() -> None:
         Card(Suit.SPADES ,Value.EIGHT),
         Card(Suit.DIAMONDS ,Value.EIGHT)}, lead_suit=Suit.CLUBS)
     
-    assert legal_moves == {Card(Suit.CLUBS, Value.TWO),Card(Suit.CLUBS, Value.EIGHT)}
+    assert legal_moves == [Card(Suit.CLUBS, Value.TWO),Card(Suit.CLUBS, Value.EIGHT)]
 
 
 def test_determine_winner() -> None:
