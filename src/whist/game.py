@@ -3,21 +3,32 @@ from typing import Optional,List
 from random import shuffle
 from copy import deepcopy
 
-
-
+import torch
 
 
 class WhistGame:
     def __init__(self, player_hands : List[Deal] = [list(),list()], trick_history : List[tuple[Card,Card,Player]] = [], current_player : Player = 0, deck : List[Card] = DECK, trump_suit : Optional[Suit] = None):
         self.player_hands : List[Deal] = player_hands
-        self.trick_history: List[tuple[Card,Card,Player]] = trick_history  #(lead,follow,winner)
+        self.trick_history: List[tuple[Card, Card, Player]] = trick_history  #(lead,follow,winner)
         self.current_player: Player = current_player
         self.trump_suit : Optional[Suit] = trump_suit
         self.current_trick : Optional[Trick] = None
-        self.deck : List[Card] = DECK
+        self.deck : List[Card] = deck
         self.is_finished : bool = False
-
     
+    def __str__(self) -> str:
+        return f""""
+        
+        --------------------------\n
+
+        \t Player 1 Hand: {print(self.player_hands)} - [{"x" if self.current_player == 0 else " "}]
+        \t Player 2 Hand: {print(self.player_hands[1])} - [{"x" if self.current_player == 1 else " "}]
+
+
+        ###
+        \t Trick history: {self.trick_history}
+        ###
+    """
 
     @property
     def current_hand(self) -> Deal:
@@ -67,7 +78,6 @@ class WhistGame:
         else:
             winner = 'follow' if trick.follow_card.value > trick.lead_card.value else 'lead'
         return winner
-
     
     @staticmethod
     def determine_winner(trick : Trick, trump_suit : Optional[Suit]) -> str:
@@ -76,7 +86,52 @@ class WhistGame:
             return WhistGame._determine_winner_with_trump(trick, trump_suit)
         else:
             return WhistGame._determine_winner_no_trump(trick)
-        
+    
+    def encode_state(self, deck : List[Card]) -> torch.tensor:
+        """Returns a numpy array representation of the whist game
+        to be used in a nueral network 
+
+        Returns:
+            np.array: A unique vector representing the current game state
+        """
+
+        # the state will keep track of the following:
+        deck_size = len(deck)
+        # player zero's hand as multi hot vector - (CARD_DECK,)
+        player_zero_cards = torch.zeros(deck_size)
+        player_zero_indices = Card.get_indices_for_cards(cards=self.player_hands[0], deck=deck)
+        player_zero_cards[player_zero_indices] = 1.0
+
+        # player one's hand as multi hot vector - (CARD_DECK,)
+        player_one_cards = torch.zeros(deck_size)
+        player_one_indices = Card.get_indices_for_cards(cards=self.player_hands[1], deck=deck)
+        player_one_cards[player_one_indices] = 1.0
+
+        # 0/1 flag to represent current player - (1, )
+        current_player = torch.array(self.current_player)
+
+        # led card ( 0 vector if  current player leading) (CARD_DECK)
+        led_card = torch.zeros(deck_size)
+        if self.current_trick.lead_card is not None:
+            led_card[Card.get_indices_for_cards(cards=[self.current_trick.lead_card], deck=deck)] = 1.0
+
+        # trump suit (0 if no trump suit ,1,2,3,4 for C,D,H,S) (4)
+        trump_suit = torch.zeros(4)
+        if self.trump_suit:
+            trump_suit[int(self.trump_suit)] = 1.0
+
+        # create the state vecor by concatenating all these pieces together
+        state = torch.cat(
+            [
+                player_zero_cards,
+                player_one_cards,
+                current_player,
+                led_card,
+                trump_suit
+            ]
+        )
+        return state
+
 
 
 

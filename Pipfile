@@ -8,6 +8,8 @@ numpy = "*"
 torch = "*"
 matplotlib = "*"
 microwhist = {file = ".", editable = true}
+pyarrow = "*"
+pandas = "*"
 
 [dev-packages]
 black = "*"

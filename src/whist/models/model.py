@@ -128,8 +128,26 @@ class Card:
         return Card(suit=Suit.from_str(card[:1]), value=Value.from_str(card[1:]))
     
 
-    def __lt__(self, other : 'Card'):
-        return self.suit <= other.suit and self.value <= other.value
+    def __lt__(self, other : 'Card')->bool:
+        return (self.suit,self.value) < (other.suit,other.value)
+    
+    def __int__(self)->int:
+        return self.suit*13 + (self.value-2)
+        
+    @staticmethod
+    def get_indices_for_cards(cards : List['Card'], deck: List['Card']) -> List[int]:
+        """Return a list with the indices of that cards in the deck
+
+        Args:
+            cards (List[Card]): The list of cards for which we need indices
+            deck (List[Card]): The full deck of cards to be used
+        """
+        indices : List[int] = []
+        deck = sorted(deck)
+        for i, card in enumerate(cards):
+            if card in cards:
+                indices.append(i)
+        return indices
 
 
 @dataclass
@@ -141,7 +159,9 @@ class Trick:
 
 DECK : List[Card] = [Card(*tup) for tup in product(Suit,Value)]
 
-print(DECK)
+
+
+
 
 Deal : TypeAlias = List[Card] # a deal of cards, ordered in lexicograhic order
 Player: TypeAlias = int  # 0 or 1
