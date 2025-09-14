@@ -1,3 +1,18 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "microwhist"
+version = "0.0.1"
+authors = [
+   { name="Gianpiero Cea"},
+ ]
+description = "Experiments learning neural policies for small variant of whist"
+
+[tool.setuptools.packages.find]
+where = ["src"] 
+
 [tool.black]
 line-length= 88
 target-version=['py311']
